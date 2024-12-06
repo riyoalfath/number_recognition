@@ -1,6 +1,4 @@
-=======================
-======= Version =======
-=======================
+Version
 
 nr1: Not really work, I even forgot where the code stored
 
