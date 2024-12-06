@@ -3,7 +3,6 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from PIL import Image
-
 import cv2
 from matplotlib import pyplot as plt
 
@@ -15,13 +14,14 @@ def get_mnist_data():
     # get data - this will be cached 
     mnist = tf.keras.datasets.mnist
 
+    # split the data
     (x_train, y_train),(x_test, y_test) = mnist.load_data(path=path)
     return (x_train, y_train, x_test, y_test)
 
 # train model with mnist data 
 def train_model(x_train, y_train, x_test, y_test):
     # set up TF model and train 
-    # callback 
+    # callback if accuracy reached 99%
     class myCallback(tf.keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}):
             print(logs)
@@ -36,11 +36,12 @@ def train_model(x_train, y_train, x_test, y_test):
 
     # create model 
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Flatten(input_shape=(28, 28)),
-        tf.keras.layers.Dense(512, activation=tf.nn.relu),
-        tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+        tf.keras.layers.Flatten(input_shape=(28, 28)), # flatten layer, convert each 28x28 image into 1D array
+        tf.keras.layers.Dense(512, activation=tf.nn.relu), # dense layer, 512 neurons, uses ReLU activation for pattern recognition
+        tf.keras.layers.Dense(10, activation=tf.nn.softmax) # output layer, 10 neurons, uses softmax activation to classify the digits (0-9)
     ])
 
+    # compile, sets optimizer, loss function, and evaluation metrics
     model.compile(optimizer='adam',
                 loss='sparse_categorical_crossentropy',
                 metrics=['accuracy'])
@@ -98,30 +99,30 @@ def start_cv(model):
             # black outer frame
             frame[0:480, 0:80] = 0
             frame[0:480, 560:640] = 0
-            grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # gray scaling
 
             # apply threshold
-            _, thr = cv2.threshold(grayFrame, threshold, 255, cv2.THRESH_BINARY_INV)
+            _, thr = cv2.threshold(grayFrame, threshold, 255, cv2.THRESH_BINARY_INV) # binaritation the gray scale
            
 
             # get central image 
             resizedFrame = thr[240-75:240+75, 320-75:320+75]
-            background[240-75:240+75, 320-75:320+75] = resizedFrame
+            background[240-75:240+75, 320-75:320+75] = resizedFrame # detection square
 
             # resize for inference 
             iconImg = cv2.resize(resizedFrame, (28, 28))
             
             # pass to model predictor 
-            res = predict(model, iconImg)
+            res = predict(model, iconImg) # predict by model
 
             # clear background 
-            if frameCount == 5:
+            if frameCount == 5: # refresh count after 5 frame
                 background[0:480, 0:80] = 0
                 frameCount = 0
 
             # show text 
-            cv2.putText(background, res, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3)
-            cv2.rectangle(background, (320-80, 240-80), (320+80, 240+80), (255, 255, 255), thickness=3)
+            cv2.putText(background, res, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3) # show number text
+            cv2.rectangle(background, (320-80, 240-80), (320+80, 240+80), (255, 255, 255), thickness=3) # show square
             
             # display frame 
             cv2.imshow('background', background)
@@ -145,13 +146,13 @@ def main():
         print('loaded saved model.')
         print(model.summary())
     except:
-        # load and train data 
-        print("getting mnist data...")
-        (x_train, y_train, x_test, y_test) = get_mnist_data()
-        print("training model...")
-        model = train_model(x_train, y_train, x_test, y_test)
-        print("saving model...")
-        model.save('model.h5')
+         # load and train data 
+         print("getting mnist data...")
+         (x_train, y_train, x_test, y_test) = get_mnist_data()
+         print("training model...")
+         model = train_model(x_train, y_train, x_test, y_test)
+         print("saving model...")
+         model.save('model.h5')
     
     print("starting cv...")
 
